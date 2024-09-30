@@ -1,0 +1,20 @@
+services:
+  data-prepper:
+    image: opensearchproject/data-prepper:2.8.1
+    container_name: data-prepper
+    volumes:
+      - ./pipelines.yaml:/usr/share/data-prepper/pipelines/pipelines.yaml
+      - ./data-prepper-config.yaml:/usr/share/data-prepper/data-prepper-config.yaml
+#      - ./server.crt:/usr/share/data-prepper/server.crt
+#      - ./server.key:/usr/share/data-prepper/server.key
+
+    ports:
+      - "21890:21890" # trace port
+      - "21891:21891" # metrics port
+
+    networks:
+      - otel-net
+
+networks:
+  otel-net:
+    external: true

@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: otel-collector:9987
+
+  hostmetrics:
+    scrapers:
+      cpu:
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+
+exporters:
+  logging:
+  # prometheus 사용 하는 경우 활성화
+  # prometheus는 pull로 가져 가서 otel-collector의 포트를 열어놔야함.
+#  prometheus:
+#    endpoint: otel-collector:9464
+  # otlp/jaeger:
+  #   endpoint: jaeger:4317
+  #   tls:
+  #     insecure: true # self signed certification 사용시 필수 (ca 검사때문에)
+  #     insecure_skip_verify: true
+
+  otlp/data-prepper/trace:
+    endpoint: data-prepper:21890
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+  otlp/data-prepper/metrics:
+    endpoint: data-prepper:21891
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+#  debug:
+#    verbosity: detailed
+#    sampling_initial: 5
+#    sampling_thereafter: 200
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [logging, otlp/data-prepper/trace]
+    metrics:
+      receivers: [otlp, hostmetrics]
+#      exporters: [logging, prometheus, otlp/data-prepper/metrics] # prometheus 사용 하는 경우 export쪽과 함께 주석해제
+      exporters: [logging, otlp/data-prepper/metrics]
+

@@ -17,8 +17,9 @@ exporters:
   logging:
   # prometheus 사용 하는 경우 활성화
   # prometheus는 pull로 가져 가서 otel-collector의 포트를 열어놔야함.
-#  prometheus:
-#    endpoint: otel-collector:9464
+  prometheus:
+    endpoint: otel-collector:9464
+    
   # otlp/jaeger:
   #   endpoint: jaeger:4317
   #   tls:
@@ -61,7 +62,7 @@ service:
     metrics:
       receivers: [otlp]
 #      exporters: [logging, prometheus, otlp/data-prepper/metrics] # prometheus 사용 하는 경우 export쪽과 함께 주석해제
-      exporters: [debug, otlp/data-prepper/metrics]
+      exporters: [debug, otlp/data-prepper/metrics, prometheus]
 
     logs:
       receivers: [otlp]

@@ -157,6 +157,7 @@ func main() {
 		{"otel-collector", "./otel-collector", nil},
 		{"opensearch", "./opensearch", map[string]string{"OPENSEARCH_INITIAL_ADMIN_PASSWORD": "QWERqwer1!"}},
 		{"data-prepper", "./data-prepper", nil},
+		{"prometheus", "./prometheus", nil},
 	}
 
 	var action string

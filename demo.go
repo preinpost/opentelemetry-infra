@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -111,11 +112,44 @@ func KillJar() error {
 	return killCmd.Run()
 }
 
+func DockerLogs(svc string) error {
+	cmd := exec.Command("docker", "ps")
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	// 출력된 결과를 줄 단위로 분리
+	lines := strings.Split(string(output), "\n")
+	var pid string
+
+	// 각 줄을 검사하여 서비스 이름이 포함된 줄만 출력
+	for _, line := range lines {
+		if strings.Contains(line, svc) {
+			pid = strings.Fields(line)[0]
+		}
+	}
+
+	if pid == "" {
+		return errors.New("pid not found")
+	}
+
+	fmt.Println("pid:", pid)
+
+	logsCmd := exec.Command("docker", "logs", "-f", pid)
+
+	logsCmd.Stdout = os.Stdout
+	logsCmd.Stderr = os.Stderr
+	return logsCmd.Run()
+}
+
 func main() {
 	up := flag.Bool("up", false, "Bring up the docker compose services")
 	down := flag.String("down", "", "Bring down the docker compose services")
 	jar := flag.Bool("jar", false, "Run the jar with java agent")
 	kill := flag.Bool("kill", false, "Run the kill java application")
+	logs := flag.String("logs", "", "logging specific service")
 
 	flag.Parse()
 
@@ -135,6 +169,8 @@ func main() {
 		action = "jar"
 	case *kill:
 		action = "kill"
+	case *logs != "":
+		action = "logs"
 	default:
 		action = "usage"
 	}
@@ -186,6 +222,12 @@ func main() {
 	case "kill":
 		if err := KillJar(); err != nil {
 			log.Fatalf("Failed to kill: %v", err)
+		} else {
+			fmt.Println("java application killed")
+		}
+	case "logs":
+		if err := DockerLogs(*logs); err != nil {
+			log.Fatalf("Failed to logging: %v", err)
 		}
 
 	case "usage":

@@ -25,6 +25,11 @@ exporters:
   #     insecure: true # self signed certification 사용시 필수 (ca 검사때문에)
   #     insecure_skip_verify: true
 
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
   otlp/data-prepper/trace:
     endpoint: data-prepper:21890
     tls:
@@ -33,6 +38,12 @@ exporters:
 
   otlp/data-prepper/metrics:
     endpoint: data-prepper:21891
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+  otlp/data-prepper/logs:
+    endpoint: data-prepper:21892
     tls:
       insecure: true
       insecure_skip_verify: true
@@ -46,9 +57,12 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging, otlp/data-prepper/trace]
+      exporters: [otlp/data-prepper/trace]
     metrics:
-      receivers: [otlp, hostmetrics]
+      receivers: [otlp]
 #      exporters: [logging, prometheus, otlp/data-prepper/metrics] # prometheus 사용 하는 경우 export쪽과 함께 주석해제
-      exporters: [logging, otlp/data-prepper/metrics]
+      exporters: [debug, otlp/data-prepper/metrics]
 
+    logs:
+      receivers: [otlp]
+      exporters: [otlp/data-prepper/logs]

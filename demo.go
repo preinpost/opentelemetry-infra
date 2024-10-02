@@ -10,7 +10,11 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+
+	"go.uber.org/zap"
 )
+
+var logger *zap.Logger
 
 type Resource struct {
 	resourceName string
@@ -85,7 +89,7 @@ func RunJarWithJavaAgent() error {
 		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 	}
 
-	fmt.Printf("%s is Run", resource.resourceName)
+	logger.Info("Resource is running", zap.String("resourceName", resource.resourceName))
 
 	return cmd.Start()
 }
@@ -135,8 +139,6 @@ func DockerLogs(svc string) error {
 		return errors.New("pid not found")
 	}
 
-	fmt.Println("pid:", pid)
-
 	logsCmd := exec.Command("docker", "logs", "-f", pid)
 
 	logsCmd.Stdout = os.Stdout
@@ -144,8 +146,18 @@ func DockerLogs(svc string) error {
 	return logsCmd.Run()
 }
 
+func init() {
+	var err error
+
+	logger, err = zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
+}
+
 func main() {
-	up := flag.Bool("up", false, "Bring up the docker compose services")
+	up := flag.String("up", "", "Bring up the docker compose services")
 	down := flag.String("down", "", "Bring down the docker compose services")
 	jar := flag.Bool("jar", false, "Run the jar with java agent")
 	kill := flag.Bool("kill", false, "Run the kill java application")
@@ -162,7 +174,7 @@ func main() {
 
 	var action string
 	switch {
-	case *up:
+	case *up != "":
 		action = "up"
 	case *down != "":
 		action = "down"
@@ -180,21 +192,38 @@ func main() {
 	case "up":
 		if err := CreateDockerNetwork(); err != nil {
 			if strings.Contains(err.Error(), "network with name otel-net already exists") {
-				log.Println("Network already exists, continuing...")
+				logger.Info("Network already exists, continuing...")
 			} else {
 				log.Fatalf("Failed to create docker network: %v", err)
 			}
 		}
 
-		for _, resource := range resources {
-			if err := UpDockerCompose(resource); err != nil {
-				log.Printf("Error bringing up resource %s: %v", resource.resourceName, err)
-				for _, res := range resources {
-					DownDockerCompose(res)
+		if *up == "all" {
+			for _, resource := range resources {
+				if err := UpDockerCompose(resource); err != nil {
+					log.Printf("Error bringing up resource %s: %v", resource.resourceName, err)
+					for _, res := range resources {
+						DownDockerCompose(res)
+					}
+					RemoveDockerNetwork()
+					log.Fatalf("docker compose up error: %v", err)
 				}
-				RemoveDockerNetwork()
-				log.Fatalf("docker compose up error: %v", err)
 			}
+		} else {
+
+			for _, resource := range resources {
+				if resource.resourceName == *up {
+					if err := UpDockerCompose(resource); err != nil {
+						log.Printf("Error bringing up resource %s: %v", resource.resourceName, err)
+						for _, res := range resources {
+							DownDockerCompose(res)
+						}
+						RemoveDockerNetwork()
+						log.Fatalf("docker compose up error: %v", err)
+					}
+				}
+			}
+
 		}
 
 	case "down":

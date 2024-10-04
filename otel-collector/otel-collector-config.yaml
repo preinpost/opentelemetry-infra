@@ -57,11 +57,8 @@ exporters:
       insecure_skip_verify: true
 
 
-  otlp/loki/logs:
-    endpoint: loki:3100
-    tls:
-      insecure: true
-      insecure_skip_verify: true    
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
 
 #  debug:
 #    verbosity: detailed
@@ -79,4 +76,4 @@ service:
 
     logs:
       receivers: [otlp]
-      exporters: [otlp/data-prepper/logs, otlp/loki/logs]
+      exporters: [otlp/data-prepper/logs, loki]

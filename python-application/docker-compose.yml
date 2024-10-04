@@ -1,0 +1,52 @@
+services:
+  shopper:
+    image: codeboten/shopper:chapter2
+    container_name: shopper
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:9987
+      - OTEL_EXPORTER_OTLP_INSECURE=true
+      - GROCERY_STORE_URL=http://grocery-store:5000/products
+    networks:
+      - otel-net
+    depends_on:
+      - grocery-store
+    stop_grace_period: 1s
+  grocery-store:
+    image: codeboten/grocery-store:chapter2
+    container_name: grocery-store
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:9987
+      - OTEL_SERVICE_NAME=grocery-store
+      - INVENTORY_URL=http://legacy-inventory:5001/inventory
+    networks:
+      - otel-net
+    depends_on:
+      - legacy-inventory
+    stop_grace_period: 1s
+    ports:
+      - 5000:5000
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 80M
+  legacy-inventory:
+    image: codeboten/legacy-inventory:chapter2
+    container_name: inventory
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:9987
+      - OTEL_SERVICE_NAME=inventory
+    networks:
+      - otel-net
+    stop_grace_period: 1s
+    ports:
+      - 5001:5001
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 80M
+ 
+networks:
+  otel-net:
+    external: true

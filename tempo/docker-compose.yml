@@ -1,0 +1,35 @@
+services:
+
+  init:
+    image: &tempoImage grafana/tempo:latest
+    user: root
+    entrypoint:
+      - "chown"
+      - "10001:10001"
+      - "/var/tempo"
+    volumes:
+      - ./tempo-data:/var/tempo
+
+
+  tempo:
+    image: *tempoImage
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+      - ./tempo-data:/var/tempo
+    ports:
+#      - "14268:14268"  # jaeger ingest
+      - "3200:3200"   # tempo
+      # - "4317:4317"  # otlp grpc
+#      - "9095:9095" # tempo grpc
+#      - "4318:4318"  # otlp http
+#      - "9411:9411"   # zipkin
+    depends_on:
+      - init
+    networks:
+      - otel-net
+
+networks:
+  otel-net:
+    external: true

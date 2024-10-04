@@ -31,6 +31,13 @@ exporters:
     sampling_initial: 5
     sampling_thereafter: 200
 
+  otlp/tempo/trace:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+
   otlp/data-prepper/trace:
     endpoint: data-prepper:21890
     tls:
@@ -49,6 +56,13 @@ exporters:
       insecure: true
       insecure_skip_verify: true
 
+
+  otlp/loki/logs:
+    endpoint: loki:3100
+    tls:
+      insecure: true
+      insecure_skip_verify: true    
+
 #  debug:
 #    verbosity: detailed
 #    sampling_initial: 5
@@ -58,12 +72,11 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp/data-prepper/trace]
+      exporters: [otlp/data-prepper/trace, otlp/tempo/trace]
     metrics:
       receivers: [otlp]
-#      exporters: [logging, prometheus, otlp/data-prepper/metrics] # prometheus 사용 하는 경우 export쪽과 함께 주석해제
-      exporters: [debug, otlp/data-prepper/metrics, prometheus]
+      exporters: [otlp/data-prepper/metrics, prometheus]
 
     logs:
       receivers: [otlp]
-      exporters: [otlp/data-prepper/logs]
+      exporters: [otlp/data-prepper/logs, otlp/loki/logs]

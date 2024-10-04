@@ -170,6 +170,9 @@ func main() {
 		{"opensearch", "./opensearch", map[string]string{"OPENSEARCH_INITIAL_ADMIN_PASSWORD": "QWERqwer1!"}},
 		{"data-prepper", "./data-prepper", nil},
 		{"prometheus", "./prometheus", nil},
+		{"tempo", "./tempo", nil},
+		{"grafana", "./grafana", nil},
+		{"loki", "./loki", nil},
 	}
 
 	var action string

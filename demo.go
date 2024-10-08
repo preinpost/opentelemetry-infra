@@ -94,6 +94,51 @@ func RunJarWithJavaAgent() error {
 	return cmd.Start()
 }
 
+func RunPythonApp() error {
+	resource := Resource{
+		path: "./python-application",
+	}
+
+	cmd := exec.Command("docker", "compose", "-f", "docker-compose.yml", "up", "-d")
+	cmd.Dir = resource.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+func RunManualJarWithJavaAgent() error {
+	jarName := "manual-spring-petclinic-3.3.0.jar"
+	resource := Resource{
+		resourceName: "manual-java-application",
+		path:         "./java-application",
+		env: map[string]string{
+			"OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:9987",
+			"OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+			"OTEL_TRACES_EXPORTER":        "otlp",
+			"OTEL_METRICS_EXPORTER":       "otlp",
+			"OTEL_LOGS_EXPORTER":          "otlp",
+		},
+	}
+
+	cmd := exec.Command("javaw", "-jar", jarName)
+	cmd.Dir = resource.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = os.Environ()
+	for k, v := range resource.env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
+	}
+
+	logger.Info("Resource is running", zap.String("resourceName", resource.resourceName))
+
+	return cmd.Start()
+}
+
 func KillJar() error {
 	cmd := exec.Command("cmd.exe", "/C", "netstat -ano | findstr 8080")
 
@@ -114,6 +159,19 @@ func KillJar() error {
 
 	killCmd := exec.Command("cmd.exe", "/C", fmt.Sprintf("taskkill /f /pid %s", pid))
 	return killCmd.Run()
+}
+
+func KillPythonApp() error {
+	resource := Resource{
+		path: "./python-application",
+	}
+
+	cmd := exec.Command("docker", "compose", "down")
+	cmd.Dir = resource.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
 
 func DockerLogs(svc string) error {
@@ -160,8 +218,11 @@ func main() {
 	up := flag.String("up", "", "Bring up the docker compose services")
 	down := flag.String("down", "", "Bring down the docker compose services")
 	jar := flag.Bool("jar", false, "Run the jar with java agent")
+	manual := flag.Bool("manual", false, "Run the manual integrated jar with java agent")
 	kill := flag.Bool("kill", false, "Run the kill java application")
+	killPython := flag.Bool("kill-python", false, "Run the kill python application")
 	logs := flag.String("logs", "", "logging specific service")
+	python := flag.Bool("python", false, "Run Python Applications")
 
 	flag.Parse()
 
@@ -183,8 +244,14 @@ func main() {
 		action = "down"
 	case *jar:
 		action = "jar"
+	case *python:
+		action = "python"
+	case *manual:
+		action = "manual"
 	case *kill:
 		action = "kill"
+	case *killPython:
+		action = "kill-python"
 	case *logs != "":
 		action = "logs"
 	default:
@@ -252,12 +319,30 @@ func main() {
 			log.Fatalf("Failed to run jar with java agent: %v", err)
 		}
 
+	case "python":
+		if err := RunPythonApp(); err != nil {
+			log.Fatalf("Failed to run jar with java agent: %v", err)
+		}
+
+	case "manual":
+		if err := RunManualJarWithJavaAgent(); err != nil {
+			log.Fatalf("Failed to run jar with java agent: %v", err)
+		}
+
 	case "kill":
 		if err := KillJar(); err != nil {
 			log.Fatalf("Failed to kill: %v", err)
 		} else {
 			fmt.Println("java application killed")
 		}
+
+	case "kill-python":
+		if err := KillPythonApp(); err != nil {
+			log.Fatalf("Failed to kill: %v", err)
+		} else {
+			fmt.Println("java application killed")
+		}
+
 	case "logs":
 		if err := DockerLogs(*logs); err != nil {
 			log.Fatalf("Failed to logging: %v", err)

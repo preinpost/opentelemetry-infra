@@ -7,7 +7,6 @@ services:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
       - "9987:9987" # OTLP gRPC
-      - "55681:55681" # OTLP HTTP
       - "9464:9464" # Prometheus (pull 때문에 필요)
     networks:
       - otel-net

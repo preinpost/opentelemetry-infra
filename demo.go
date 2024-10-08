@@ -62,6 +62,14 @@ func DownDockerCompose(resource Resource) error {
 	return cmd.Run()
 }
 
+func StopDockerCompose(resource Resource) error {
+	cmd := exec.Command("docker", "compose", "-f", "docker-compose.yml", "stop")
+	cmd.Dir = resource.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func RunJarWithJavaAgent() error {
 	jarName := "spring-petclinic-3.3.0-SNAPSHOT.jar"
 	resource := Resource{
@@ -217,10 +225,11 @@ func init() {
 func main() {
 	up := flag.String("up", "", "Bring up the docker compose services")
 	down := flag.String("down", "", "Bring down the docker compose services")
-	jar := flag.Bool("jar", false, "Run the jar with java agent")
+	stop := flag.String("stop", "", "Bring stop the docker compose services")
+	jar := flag.Bool("jar", false, "Run the jar with java agent. 8080포트에서 실행됩니다.")
 	manual := flag.Bool("manual", false, "Run the manual integrated jar with java agent")
 	kill := flag.Bool("kill", false, "Run the kill java application")
-	killPython := flag.Bool("kill-python", false, "Run the kill python application")
+	killPython := flag.Bool("kill-python", false, "Run the kill python application. 파이썬 프로그램은 초단위로 응답을 발생합니다.")
 	logs := flag.String("logs", "", "logging specific service")
 	python := flag.Bool("python", false, "Run Python Applications")
 
@@ -242,6 +251,8 @@ func main() {
 		action = "up"
 	case *down != "":
 		action = "down"
+	case *stop != "":
+		action = "stop"
 	case *jar:
 		action = "jar"
 	case *python:
@@ -308,6 +319,23 @@ func main() {
 			for _, resource := range resources {
 				if strings.Contains(*down, resource.resourceName) {
 					if err := DownDockerCompose(resource); err != nil {
+						log.Printf("Error bringing down resource %s: %v", resource.resourceName, err)
+					}
+				}
+			}
+		}
+
+	case "stop":
+		if *stop == "all" {
+			for _, resource := range resources {
+				if err := StopDockerCompose(resource); err != nil {
+					log.Printf("Error bringing down resource %s: %v", resource.resourceName, err)
+				}
+			}
+		} else {
+			for _, resource := range resources {
+				if strings.Contains(*down, resource.resourceName) {
+					if err := StopDockerCompose(resource); err != nil {
 						log.Printf("Error bringing down resource %s: %v", resource.resourceName, err)
 					}
 				}

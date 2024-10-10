@@ -20,11 +20,11 @@ exporters:
   prometheus:
     endpoint: otel-collector:9464
     
-  # otlp/jaeger:
-  #   endpoint: jaeger:4317
-  #   tls:
-  #     insecure: true # self signed certification 사용시 필수 (ca 검사때문에)
-  #     insecure_skip_verify: true
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true # self signed certification 사용시 필수 (ca 검사때문에)
+      insecure_skip_verify: true
 
   debug:
     verbosity: detailed
@@ -69,7 +69,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp/data-prepper/trace, otlp/tempo/trace]
+      exporters: [otlp/data-prepper/trace, otlp/tempo/trace, otlp/jaeger]
     metrics:
       receivers: [otlp]
       exporters: [otlp/data-prepper/metrics, prometheus]

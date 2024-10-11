@@ -13,6 +13,12 @@ receivers:
       memory:
       network:
 
+processors:
+  batch:
+
+connectors:
+  spanmetrics:
+
 exporters:
   logging:
   # prometheus 사용 하는 경우 활성화
@@ -60,19 +66,19 @@ exporters:
   loki:
     endpoint: http://loki:3100/loki/api/v1/push
 
-#  debug:
-#    verbosity: detailed
-#    sampling_initial: 5
-#    sampling_thereafter: 200
-
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [otlp/data-prepper/trace, otlp/tempo/trace, otlp/jaeger]
+      processors: [batch]
+      exporters: [otlp/data-prepper/trace, otlp/tempo/trace, otlp/jaeger, spanmetrics]
     metrics:
       receivers: [otlp]
       exporters: [otlp/data-prepper/metrics, prometheus]
+
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      exporters: [debug, prometheus]
 
     logs:
       receivers: [otlp]

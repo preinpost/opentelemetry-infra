@@ -15,6 +15,12 @@ services:
       - "4318:4318"
       - "4317:4317" # OTLP gRPC
     environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=https://opensearch-node1:9200
+      - ES_USERNAME=admin
+      - ES_PASSWORD=QWERqwer1!
+      - ES_TLS_SKIP_HOST_VERIFY=true
+      - ES_TLS_ENABLED=true
       - METRICS_STORAGE_TYPE=prometheus
       - PROMETHEUS_SERVER_URL=http://prometheus:9090
       - PROMETHEUS_QUERY_SUPPORT_SPANMETRICS_CONNECTOR=true
